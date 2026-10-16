@@ -1,0 +1,32 @@
+---
+# Optional overlay: qiotlctl -c examples/config.yaml -c examples/outputs.yaml ...
+# Keep disabled until endpoint/identity previews are reviewed.
+outputs:
+  victoriametrics:
+    enabled: false
+    import_endpoint: http://127.0.0.1:18428/api/v1/import
+    metrics_prefix: qingping_iot_
+    batch_size: 1000
+    timeout: 5s
+    flush_interval: 1s
+    retry_max: 1m
+    include_invalid_time: false
+    normal_only: false
+  home_assistant:
+    enabled: false
+    discovery_prefix: homeassistant
+    state_prefix: qiotlctl
+    birth_topic: homeassistant/status
+    bridge_id: qiotlctl
+    expire_after: 600s
+
+# Enabled outputs affect readiness. Liveness and capture remain independent.
+# HA needs publish+subscribe on its discovery topics for retained readback.
+health:
+  require_vm: true
+  require_ha: true
+  check_interval: 30s
+  check_timeout: 5s
+  failure_grace: 30s
+  max_pending_age: 5m
+  log_interval: 5m

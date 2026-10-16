@@ -1,0 +1,16 @@
+---
+devices:
+  living-room:
+    id: living-room-sensor
+    home_assistant:
+      id: living_room
+      expire_after: 600s
+    model: CGDN1
+    profile: standard_lite
+    topics:
+      telemetry: qingping/EXAMPLE_LITE/up
+      commands: qingping/EXAMPLE_LITE/down
+    # Desired values only; no writes occur merely by starting the daemon.
+    settings:
+      # Fixed offset for this device; there is no automatic DST change.
+      clock: {timezone: "+02:00"}

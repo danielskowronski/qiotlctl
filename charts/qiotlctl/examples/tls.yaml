@@ -1,0 +1,21 @@
+---
+config:
+  data:
+    mqtt:
+      url: mqtts://broker.example:8883
+      tls:
+        ca_file: /etc/qiotld/tls/broker/ca.crt
+        cert_file: /etc/qiotld/tls/broker/tls.crt
+        key_file: /etc/qiotld/tls/broker/tls.key
+    outputs:
+      victoriametrics:
+        ca_file: /etc/qiotld/tls/vm/ca.crt
+extraVolumes:
+  - name: broker-tls
+    secret: {secretName: qiotlctl-broker-tls, defaultMode: 288}
+  - name: vm-ca
+    configMap: {name: qiotlctl-vm-ca}
+extraVolumeMounts:
+  - {name: broker-tls, mountPath: /etc/qiotld/tls/broker, readOnly: true}
+  - {name: vm-ca, mountPath: /etc/qiotld/tls/vm, readOnly: true}
+# Also replace networkPolicy.egressEndpoints with rules allowing these endpoints.

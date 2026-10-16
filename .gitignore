@@ -1,0 +1,20 @@
+/bin/
+/dist/
+/.local/
+/history/
+/live-access/
+/captures/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+.env
+.DS_Store
+.env.*
+!.env.example
+
+# Keep build helpers visible even when a global Git ignore excludes scripts/.
+!/scripts/
+!/scripts/**

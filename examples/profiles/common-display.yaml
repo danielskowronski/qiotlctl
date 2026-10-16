@@ -1,0 +1,7 @@
+---
+profiles:
+  common_display:
+    settings:
+      display:
+        temperature_unit: celsius
+        clock_format: 24h

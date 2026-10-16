@@ -1,0 +1,9 @@
+---
+profiles:
+  # User-defined settings profile, separate from the CGP22C model adapter.
+  standard_co2:
+    extends: common_display
+    settings:
+      reporting: {upload_interval: 5m, record_interval: 30s}
+      co2:
+        indicator: {yellow_min_ppm: 1000, yellow_max_ppm: 1500}

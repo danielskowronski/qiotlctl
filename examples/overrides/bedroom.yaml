@@ -1,0 +1,9 @@
+---
+# Optional: qiotlctl -c examples/config.yaml -c examples/overrides/bedroom.yaml config explain bedroom
+# This file is intentionally outside the default include globs.
+devices:
+  bedroom:
+    settings:
+      # Stop managing this inherited value; do not send a reset or zero.
+      reporting: {record_interval: null}
+      display: {clock_format: 12h}

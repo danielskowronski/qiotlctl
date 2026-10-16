@@ -1,0 +1,141 @@
+---
+{{- include "qiotlctl.validate" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "qiotlctl.fullname" . }}
+  labels:
+    {{- include "qiotlctl.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      {{- include "qiotlctl.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "qiotlctl.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      serviceAccountName: {{ include "qiotlctl.serviceAccountName" . }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext | nindent 8 }}
+      containers:
+        - name: daemon
+          image: {{ include "qiotlctl.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --config
+            - {{ printf "%s/%s" .Values.config.configDir .Values.config.configFilename | quote }}
+            {{- range .Values.config.overlayFiles }}
+            - --config
+            - {{ printf "%s/%s" $.Values.config.configDir . | quote }}
+            {{- end }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if or .Values.mqttCredentials.existingSecret .Values.vmCredentials.existingSecret .Values.vmUser.enabled .Values.extraEnv }}
+          env:
+            {{- range $prefix, $c := dict "MQTT" .Values.mqttCredentials "VM" .Values.vmCredentials }}
+            {{- $name := $c.existingSecret }}
+            {{- if and (eq $prefix "VM") $.Values.vmUser.enabled }}
+            {{- $name = printf "vmuser-%s" (include "qiotlctl.vmUserName" $) }}
+            {{- end }}
+            {{- if $name }}
+            {{- range $field, $key := dict "USERNAME" $c.usernameKey "PASSWORD" $c.passwordKey }}
+            {{- if $key }}
+            - name: {{ printf "QIOTLCTL_%s_%s" $prefix $field }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $name }}
+                  key: {{ $key }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          ports:
+            - {name: http, containerPort: 9090, protocol: TCP}
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - {name: config, mountPath: {{ .Values.config.configDir | quote }}, readOnly: true}
+            - {name: data, mountPath: {{ .Values.persistence.mountPath | quote }}}
+            - {name: tmp, mountPath: /tmp}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          projected:
+            defaultMode: 0440
+            sources:
+              {{- if .Values.config.existingSecret }}
+              - secret:
+                  name: {{ .Values.config.existingSecret }}
+              {{- else if .Values.config.existingConfigMap }}
+              - configMap:
+                  name: {{ .Values.config.existingConfigMap }}
+              {{- end }}
+              {{- if or (not (or .Values.config.existingSecret .Values.config.existingConfigMap)) .Values.config.files }}
+              - secret:
+                  name: {{ include "qiotlctl.configName" . }}
+              {{- end }}
+              {{- with .Values.config.extraSources }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qiotlctl.claimName" . }}
+          {{- else }}
+          emptyDir:
+            sizeLimit: {{ .Values.persistence.emptyDirSizeLimit }}
+          {{- end }}
+        - name: tmp
+          emptyDir: {sizeLimit: 16Mi}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

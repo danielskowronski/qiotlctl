@@ -1,0 +1,27 @@
+---
+{{- if .Values.vmUser.enabled }}
+{{- if not (.Capabilities.APIVersions.Has "operator.victoriametrics.com/v1beta1/VMUser") }}
+{{- fail "vmUser.enabled requires the VMUser CRD" }}
+{{- end }}
+{{- if not .Values.vmUser.targetRefs }}
+{{- fail "vmUser.targetRefs must explicitly specify the target and import paths" }}
+{{- end }}
+{{- range .Values.vmUser.targetRefs }}
+{{- if not .paths }}{{- fail "each vmUser target needs explicit paths" }}{{- end }}
+{{- end }}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMUser
+metadata:
+  name: {{ include "qiotlctl.vmUserName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "qiotlctl.labels" . | nindent 4 }}
+    {{- with .Values.vmUser.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  username: {{ default (include "qiotlctl.fullname" .) .Values.vmUser.username | quote }}
+  generatePassword: true
+  targetRefs:
+    {{- toYaml .Values.vmUser.targetRefs | nindent 4 }}
+{{- end }}

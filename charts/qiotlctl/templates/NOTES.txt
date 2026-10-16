@@ -1,0 +1,13 @@
+qiotld is deployed as one replica using Recreate updates.
+
+Check startup: kubectl -n {{ .Release.Namespace }} logs deployment/{{ include "qiotlctl.fullname" . }}
+Probes/metrics: kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "qiotlctl.fullname" . }} 9090:{{ .Values.service.port }}
+
+Supply device configuration and broker/VM network egress rules before expecting readiness.
+Responses and outputs follow the effective application configuration; chart defaults disable them.
+Configuration is read at startup. Restart after changing externally managed config or credentials:
+  kubectl -n {{ .Release.Namespace }} rollout restart deployment/{{ include "qiotlctl.fullname" . }}
+{{ if and .Values.persistence.enabled .Values.persistence.retain }}
+The chart-created PVC is retained on uninstall. Reuse it with persistence.existingClaim;
+back it up before a storage migration or deliberate deletion.
+{{ end }}

@@ -1,0 +1,21 @@
+---
+# Apply after outputs.yaml. Operator must watch the workload namespace and
+# VMAuth must select this user's labels/namespace. No operator is installed here.
+vmCredentials:
+  existingSecret: ""
+vmUser:
+  enabled: true
+  labels: {} # Set labels selected by VMAuth.spec.userSelector.
+  targetRefs:
+    - crd:
+        kind: VMCluster/vminsert
+        name: metrics
+        namespace: vm
+      # VMCluster CRDRef resolves the vminsert base URL; append tenant/API prefix.
+      targetPathSuffix: /insert/0/prometheus
+      paths: ['/api/v1/import']
+config:
+  data:
+    outputs:
+      victoriametrics:
+        import_endpoint: http://vmauth-metrics.vm.svc.cluster.local:8427/api/v1/import

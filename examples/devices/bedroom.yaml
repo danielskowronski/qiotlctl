@@ -1,0 +1,17 @@
+---
+devices:
+  bedroom:
+    id: bedroom-sensor
+    home_assistant:
+      id: bedroom
+      expire_after: 600s
+    model: CGP22C
+    profile: standard_co2
+    # Protocol is inferred from a known model. Unknown models default to auto.
+    topics:
+      telemetry: qingping/EXAMPLE_CO2/up
+      commands: qingping/EXAMPLE_CO2/down
+    # Overrides the profile's 5m value. Other settings come from the profile.
+    # Desired values only; apply explicitly with apply-settings bedroom --from-config.
+    settings:
+      reporting: {upload_interval: 10m}

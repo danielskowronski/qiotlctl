@@ -1,0 +1,19 @@
+---
+# Enabled exporters affect readiness; retained discovery readback needs subscribe ACL.
+# HA-only overlay: merge AFTER minimal.yaml or your own device/broker values.
+# Apply examples/emqx-acl.conf to EMQX separately, replacing both usernames.
+# qiotld: publish+subscribe homeassistant/sensor/# and qiotlctl/#; subscribe homeassistant/status.
+# HA: subscribe homeassistant/# and qiotlctl/#; publish homeassistant/status.
+# QoS 1 and retained discovery/availability must be allowed.
+# Review per-device HA IDs with `qiotlctl ha preview` before enabling.
+# Troubleshooting: docs/DEPLOYMENT.md#troubleshooting-missing-home-assistant-discovery
+config:
+  data:
+    outputs:
+      home_assistant:
+        enabled: true
+        discovery_prefix: homeassistant
+        state_prefix: qiotlctl
+        birth_topic: homeassistant/status
+        bridge_id: qiotlctl
+        expire_after: 600s

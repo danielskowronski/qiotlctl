@@ -1,0 +1,16 @@
+---
+apiVersion: v2
+name: qiotlctl
+description: Qingping local MQTT daemon, durable VictoriaMetrics export and Home Assistant discovery
+type: application
+version: 0.2.0
+appVersion: "0.2.0"
+kubeVersion: ">=1.28.0-0"
+home: https://github.com/danielskowronski/qiotlctl
+sources:
+  - https://github.com/danielskowronski/qiotlctl
+keywords: [qingping, mqtt, victoriametrics, home-assistant]
+maintainers:
+  - name: Daniel Skowroński
+annotations:
+  org.opencontainers.image.source: https://github.com/danielskowronski/qiotlctl

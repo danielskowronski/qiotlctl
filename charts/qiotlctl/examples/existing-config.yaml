@@ -1,0 +1,12 @@
+---
+# Existing Secret holds a complete native config.yaml, including the devices,
+# storage.path=/data/observations.sqlite and http.listen=:9090.
+config:
+  existingSecret: qiotlctl-config
+  extraSources:
+    - secret:
+        name: qiotlctl-settings
+        items: [{key: settings.yaml, path: settings.yaml}]
+  overlayFiles: [settings.yaml]
+persistence:
+  existingClaim: qiotlctl-data

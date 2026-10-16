@@ -1,0 +1,20 @@
+---
+{{- include "qiotlctl.validate" . }}
+{{- if or (not (or .Values.config.existingSecret .Values.config.existingConfigMap)) .Values.config.files }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "qiotlctl.configName" . }}
+  labels:
+    {{- include "qiotlctl.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  {{- if not (or .Values.config.existingSecret .Values.config.existingConfigMap) }}
+  {{ .Values.config.configFilename }}: |
+    {{- include "qiotlctl.yamlDocument" (toYaml .Values.config.data) | nindent 4 }}
+  {{- end }}
+  {{- range $name, $content := .Values.config.files }}
+  {{ $name }}: |
+    {{- include "qiotlctl.yamlDocument" $content | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,148 @@
+---
+image:
+  repository: ghcr.io/danielskowronski/qiotlctl
+  tag: "" # Defaults to Chart.appVersion; digest takes precedence.
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: [] # Kubernetes objects: [{name: ghcr-pull}]
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podLabels: {}
+
+config:
+  existingSecret: ""
+  existingConfigMap: ""
+  configDir: /etc/qiotld
+  configFilename: config.yaml
+  # Native application YAML. Credentials here are stored in the Helm release;
+  # prefer existing Secrets. Generated configuration is also stored in a Secret.
+  data:
+    api_version: qiotl/v1alpha1
+    mqtt:
+      url: mqtt://emqx:1883
+    devices: {} # Supply at least one device before installing.
+    runtime:
+      mode: observe
+      observe_commands: false
+    storage:
+      path: /data/observations.sqlite
+      capture_raw: true
+      max_bytes: 10737418240 # 10 GiB; leave space on the PVC for WAL/checkpoints.
+    http:
+      listen: :9090
+    # Required enabled outputs affect readiness, never liveness or capture.
+    # HA verification needs subscribe permission on discovery topics.
+    health:
+      require_vm: true
+      require_ha: true
+      check_interval: 30s
+      check_timeout: 5s
+      failure_grace: 30s
+      max_pending_age: 5m
+      log_interval: 5m
+    outputs:
+      victoriametrics:
+        enabled: false
+      home_assistant:
+        enabled: false
+  # Additional file name -> literal YAML string, preserving explicit nulls.
+  files: {}
+  # Kubernetes projected-volume sources, e.g. secret: {name: device-settings}.
+  # Avoid duplicate file paths across sources. All files mount in configDir.
+  extraSources: []
+  # Loaded after configFilename in this exact order; includes work as usual.
+  overlayFiles: []
+
+mqttCredentials:
+  existingSecret: ""
+  usernameKey: username
+  passwordKey: password
+vmCredentials:
+  existingSecret: ""
+  usernameKey: username
+  passwordKey: password
+# Additional cleanenv overrides, including valueFrom.secretKeyRef.
+extraEnv: []
+extraEnvFrom: []
+extraArgs: []
+# Secret/ConfigMap volumes for custom CAs or client certificates; paths belong
+# in config.data.mqtt.tls / outputs.victoriametrics.ca_file.
+extraVolumes: []
+extraVolumeMounts: []
+
+persistence:
+  enabled: true
+  existingClaim: ""
+  size: 20Gi
+  storageClass: null # null: cluster default; "": explicitly no storage class.
+  accessModes: [ReadWriteOnce] # ReadWriteOncePod may be used with compatible CSI.
+  mountPath: /data
+  retain: true # Keep a chart-created PVC on uninstall; deletion is manual.
+  annotations: {}
+  # Explicit opt-in for disposable deployments using emptyDir.
+  allowEphemeral: false
+  emptyDirSizeLimit: 1Gi
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile: {type: RuntimeDefault}
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities: {drop: [ALL]}
+resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {memory: 256Mi}
+terminationGracePeriodSeconds: 30
+startupProbe:
+  httpGet: {path: /livez, port: http}
+  periodSeconds: 2
+  failureThreshold: 30
+livenessProbe:
+  httpGet: {path: /livez, port: http}
+  periodSeconds: 10
+  timeoutSeconds: 2
+  failureThreshold: 3
+readinessProbe:
+  httpGet: {path: /readyz, port: http}
+  periodSeconds: 5
+  timeoutSeconds: 2
+  failureThreshold: 2
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+service:
+  port: 9090
+monitoring:
+  # none, vmServiceScrape, or serviceMonitor; operator CRDs are not installed.
+  kind: none
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+networkPolicy:
+  enabled: true
+  additionalIngress: [] # Allow your metrics collector to TCP 9090.
+  # Explicit broker/VM egress is required. No cluster-specific endpoints assumed.
+  egressEndpoints: [] # [{namespaceSelector: {...}, podSelector: {...}, ports: [...]}]
+  allowDNS: true
+  dnsNamespaceSelector:
+    matchLabels: {kubernetes.io/metadata.name: kube-system}
+  dnsPodSelector:
+    matchLabels: {k8s-app: kube-dns}
+
+vmUser:
+  enabled: false
+  name: "" # Defaults to release fullname; created in the workload namespace.
+  labels: {} # Must match the VMAuth user selector.
+  username: "" # Defaults to release fullname.
+  targetRefs: [] # Explicit VMCluster/vminsert or VMSingle target and import paths.

@@ -1,0 +1,21 @@
+---
+# Raw strings preserve Go's explicit null-removal semantics through Helm merges.
+config:
+  files:
+    profiles.yaml: |
+      ---
+      profiles:
+        standard_co2:
+          settings:
+            reporting: {upload_interval: 5m, record_interval: 30s}
+            display: {clock_format: 24h, temperature_unit: celsius}
+    bedroom.yaml: |
+      ---
+      devices:
+        bedroom:
+          profile: standard_co2
+          settings:
+            reporting:
+              record_interval: null
+  overlayFiles: [profiles.yaml, bedroom.yaml]
+# Settings remain desired state until an operator runs apply-settings.

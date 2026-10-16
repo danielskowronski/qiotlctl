@@ -1,0 +1,30 @@
+---
+api_version: qiotl/v1alpha1
+include:
+  - profiles/*.yaml
+  - devices/*.yaml
+mqtt:
+  url: mqtt://localhost:1883
+  username_env: MQTT_USERNAME
+  password_env: MQTT_PASSWORD
+  keepalive: 60s
+  connect_timeout: 15s
+  reconnect_max: 30s
+  qos: 1
+runtime:
+  # Automatic application replies are disabled. See docs/COMMANDS.md for opt-in.
+  mode: observe
+  queue_size: 1024
+  # Leave false for an account permitted to subscribe only to device telemetry.
+  observe_commands: false
+commands:
+  timeout: 30s
+storage:
+  # Omit path to disable persistence. Relative paths use this file's directory.
+  path: ./captures/observations.sqlite
+  capture_raw: true
+  max_bytes: 10737418240 # 10 GiB; 0 disables the soft limit
+http:
+  listen: 127.0.0.1:9090
+
+# Optionally overlay examples/outputs.yaml; both exporters start disabled.

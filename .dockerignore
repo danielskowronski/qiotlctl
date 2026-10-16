@@ -1,0 +1,13 @@
+# Allowlist: private configuration and history never enter the build context.
+**
+!Dockerfile
+!go.mod
+!go.sum
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+**/*_test.go
+!LICENSE
+!third_party/
+!third_party/**

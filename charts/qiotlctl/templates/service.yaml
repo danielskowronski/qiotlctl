@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "qiotlctl.fullname" . }}
+  labels:
+    {{- include "qiotlctl.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  # Keep operational metrics reachable during MQTT/storage readiness failures.
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "qiotlctl.selectorLabels" . | nindent 4 }}
+  ports:
+    - {name: http, port: {{ .Values.service.port }}, targetPort: http, protocol: TCP}

@@ -1,0 +1,8 @@
+---
+profiles:
+  standard_lite:
+    extends: common_display
+    settings:
+      # 10s collection is an observed compatibility exception; no limit flag needed.
+      reporting: {upload_interval: 1m, record_interval: 10s}
+      display: {screensaver: current_reading}

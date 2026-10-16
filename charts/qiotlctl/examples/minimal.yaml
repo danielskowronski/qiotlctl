@@ -1,0 +1,28 @@
+---
+# Merge with chart defaults. Replace the example identity and topic paths.
+# Broker ACLs are separate from NetworkPolicy: see examples/emqx-acl.conf.
+# Observation needs subscribe access to telemetry; commands/replies need publish
+# access to downlinks. HA adds the permissions documented in home-assistant.yaml.
+config:
+  data:
+    mqtt:
+      url: mqtt://emqx.mqtt.svc.cluster.local:1883
+    devices:
+      bedroom:
+        id: bedroom
+        mac: '001122334455'
+        model: CGP22C
+        topics:
+          telemetry: qingping/001122334455/up
+          commands: qingping/001122334455/down
+        home_assistant: {id: bedroom, name: Qingping Bedroom}
+mqttCredentials:
+  existingSecret: qiotlctl-mqtt
+networkPolicy:
+  egressEndpoints:
+    - namespaceSelector:
+        matchLabels: {kubernetes.io/metadata.name: mqtt}
+      podSelector:
+        matchLabels: {app.kubernetes.io/name: emqx}
+      ports:
+        - {port: 1883, protocol: TCP}

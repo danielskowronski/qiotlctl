@@ -1,0 +1,46 @@
+---
+# Enabled exporters affect readiness; retained discovery readback needs subscribe ACL.
+# Explicit opt-in: review HA IDs before deploying this overlay.
+# This enables BOTH VM and HA, plus VMServiceScrape. For HA alone, use home-assistant.yaml.
+# Apply examples/emqx-acl.conf to EMQX separately, replacing both MQTT usernames.
+# qiotld publishes+subscribes homeassistant/sensor/# and qiotlctl/#, subscribes homeassistant/status.
+# HA subscribes homeassistant/# and qiotlctl/#, publishes homeassistant/status.
+# Allow QoS 1 and retained discovery/availability; NetworkPolicy does not grant ACLs.
+# Troubleshooting: docs/DEPLOYMENT.md#troubleshooting-missing-home-assistant-discovery
+config:
+  data:
+    outputs:
+      victoriametrics:
+        enabled: true
+        import_endpoint: http://vmauth-metrics.vm.svc.cluster.local:8427/insert/0/prometheus/api/v1/import
+        metrics_prefix: qingping_iot_
+      home_assistant:
+        enabled: true
+        discovery_prefix: homeassistant
+        state_prefix: qiotlctl
+        birth_topic: homeassistant/status
+        bridge_id: qiotlctl
+        expire_after: 600s
+vmCredentials:
+  existingSecret: qiotlctl-vm
+monitoring:
+  kind: vmServiceScrape
+  labels: {} # Set labels required by your VMAgent's serviceScrapeSelector.
+networkPolicy:
+  # Lists replace earlier values: repeat MQTT egress from minimal.yaml.
+  egressEndpoints:
+    - namespaceSelector:
+        matchLabels: {kubernetes.io/metadata.name: mqtt}
+      podSelector:
+        matchLabels: {app.kubernetes.io/name: emqx}
+      ports: [{port: 1883, protocol: TCP}]
+    - namespaceSelector:
+        matchLabels: {kubernetes.io/metadata.name: vm}
+      podSelector:
+        matchLabels: {app.kubernetes.io/name: vmauth}
+      ports: [{port: 8427, protocol: TCP}]
+  additionalIngress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: vm}
+      ports: [{port: 9090, protocol: TCP}]
